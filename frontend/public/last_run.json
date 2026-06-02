@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-06-03T06:52:43.210139",
+  "total": 3,
+  "zst": {
+    "success": 0,
+    "failed": 0,
+    "skipped": true
+  },
+  "moneyforward": {
+    "success": 0,
+    "failed": 0,
+    "skipped": true
+  },
+  "records": [
+    {
+      "staff_name": "田中太郎",
+      "date": "2024-12-01",
+      "start_time": "09:00",
+      "end_time": "18:00",
+      "break_minutes": 60,
+      "work_minutes": 480,
+      "note": ""
+    },
+    {
+      "staff_name": "山田花子",
+      "date": "2024-12-01",
+      "start_time": "10:00",
+      "end_time": "19:00",
+      "break_minutes": 60,
+      "work_minutes": 480,
+      "note": ""
+    },
+    {
+      "staff_name": "佐藤次郎",
+      "date": "2024-12-02",
+      "start_time": "08:30",
+      "end_time": "17:30",
+      "break_minutes": 60,
+      "work_minutes": 480,
+      "note": "早番"
+    }
+  ]
+}
