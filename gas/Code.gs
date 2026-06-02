@@ -1,47 +1,72 @@
 /**
- * GAS Web App エントリーポイント
- * スプレッドシートのデータを JSON で返す
+ * GAS Web App: 勤務希望シートを解析してJSONで返す
+ *
+ * シートの形式（1行目がヘッダー）:
+ *   行0: [年(2026), フリガナ, 先月勤務, 1, 2, ..., 30, -, 公休, ...]
+ *   行1: [月(6),   空,      空,       月, 火, ..., 火, -, ...]
+ *   行2+: スタッフ行 or セクションヘッダ行
  *
  * デプロイ手順:
- *   1. このスクリプトを勤務表スプレッドシートに紐付ける
+ *   1. このスクリプトを勤務希望スプレッドシートのGASエディタに貼り付け
  *   2. 「デプロイ」→「新しいデプロイ」→「ウェブアプリ」
- *   3. 「アクセスできるユーザー」を「全員」に設定
- *   4. デプロイ URL を python/.env の GAS_ENDPOINT に設定
- *
- * スプレッドシートの列構成 (1行目がヘッダー):
- *   スタッフ名 | 日付 | 出勤時間 | 退勤時間 | 休憩(分) | 備考
+ *   3. アクセスできるユーザー:「全員」に設定
+ *   4. デプロイ後のURLを python/.env の GAS_ENDPOINT に設定
  */
+
+const DAY_START_COL = 3; // D列（インデックス3）から日付列が始まる
+
 function doGet(e) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  const data = sheet.getDataRange().getValues();
+  const values = sheet.getDataRange().getValues();
 
-  if (data.length < 2) {
-    return jsonResponse({ success: true, data: [] });
+  if (values.length < 2) {
+    return jsonResponse({ success: true, year: 0, month: 0, dayCount: 0, data: [] });
   }
 
-  const headers = data[0];
-  const rows = data.slice(1).filter(row => row[0] !== '');
+  const year = Number(values[0][0]) || new Date().getFullYear();
+  const month = Number(values[1][0]) || new Date().getMonth() + 1;
+  const dayCount = detectDayCount(values[0]);
 
-  const records = rows.map(row => {
-    const obj = {};
-    headers.forEach((header, i) => {
-      const val = row[i];
-      if (val instanceof Date) {
-        obj[header] = Utilities.formatDate(val, 'Asia/Tokyo', 'yyyy/MM/dd');
-      } else if (typeof val === 'number' && header === '出勤時間' || header === '退勤時間') {
-        // シリアル値を HH:MM に変換
-        const totalMin = Math.round(val * 24 * 60);
-        const h = Math.floor(totalMin / 60).toString().padStart(2, '0');
-        const m = (totalMin % 60).toString().padStart(2, '0');
-        obj[header] = `${h}:${m}`;
-      } else {
-        obj[header] = val;
-      }
-    });
-    return obj;
-  });
+  // 集計行のラベル（スタッフ行と区別するため）
+  const SUMMARY_LABELS = new Set(['公', '公休', '希望', '有給', 'オン', '休オ', '日勤', '午前', '午後', '欠勤', '研修']);
 
-  return jsonResponse({ success: true, data: records });
+  const records = [];
+
+  for (let r = 2; r < values.length; r++) {
+    const row = values[r];
+    const name = String(row[0] || '').trim();
+    const furigana = String(row[1] || '').trim();
+
+    // スタッフ行の条件: 名前があり、フリガナがあり、集計ラベルでない
+    if (!name || !furigana || SUMMARY_LABELS.has(name)) continue;
+
+    // 各日のシフト記号を配列で取得
+    const shifts = [];
+    for (let d = 0; d < dayCount; d++) {
+      const cell = row[DAY_START_COL + d];
+      shifts.push(cell !== null && cell !== undefined ? String(cell).trim() : '');
+    }
+
+    records.push({ name, furigana, year, month, shifts });
+  }
+
+  return jsonResponse({ success: true, year, month, dayCount, data: records });
+}
+
+/**
+ * ヘッダー行から日数を検出する (1〜31 の連続する数値を数える)
+ */
+function detectDayCount(headerRow) {
+  let count = 0;
+  for (let i = DAY_START_COL; i < headerRow.length; i++) {
+    const v = headerRow[i];
+    if (typeof v === 'number' && v >= 1 && v <= 31) {
+      count++;
+    } else if (count > 0) {
+      break; // 日付列が終わった
+    }
+  }
+  return count > 0 ? count : 30;
 }
 
 function jsonResponse(obj) {
