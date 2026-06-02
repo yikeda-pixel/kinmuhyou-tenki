@@ -12,6 +12,8 @@ from zst import ZSTAutomator
 from moneyforward import MoneyForwardAutomator, generate_csv
 from shift_mapper import SHIFT_LABEL, SHIFT_COLOR
 
+STAFF_MAPPING_PATH = Path(__file__).parent / 'staff_mapping.json'
+
 load_dotenv()
 logging.basicConfig(
     level=logging.INFO,
@@ -58,11 +60,20 @@ def run_zst(staff_list: list[StaffShift]) -> dict:
     return result
 
 
+def load_staff_mapping() -> dict:
+    if STAFF_MAPPING_PATH.exists():
+        import json as _json
+        return _json.loads(STAFF_MAPPING_PATH.read_text(encoding='utf-8'))
+    logger.warning('staff_mapping.json が見つかりません')
+    return {}
+
+
 def run_moneyforward(staff_list: list[StaffShift]) -> dict:
     url = os.getenv('MONEYFORWARD_URL', '')
 
     # CSVは常に生成（URLが未設定でも確認用に出力）
-    csv_content = generate_csv(staff_list)
+    staff_mapping = load_staff_mapping()
+    csv_content = generate_csv(staff_list, staff_mapping)
     csv_path = OUTPUT_DIR / 'moneyforward_shift.csv'
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     csv_path.write_text(csv_content, encoding='utf-8-sig')

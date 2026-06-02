@@ -1,66 +1,109 @@
 """
 マネーフォワード クラウド勤怠 シフト一括更新
 
-戦略: 「CSVで一括更新」ボタンを使う（手動操作より確実）
-1. Python が CSV ファイルを生成
-2. Playwright が「CSVで一括更新」ボタンを押してファイルをアップロード
-
-CSV フォーマットについて:
-  マネーフォワード管理画面 → シフト管理 → 「エクスポート履歴」でサンプルCSVを
-  ダウンロードし、実際のフォーマットを確認してください
-  確認後 generate_csv() のヘッダー・列を修正してください
+CSVで一括更新 用のCSVを生成する
+列構成: 従業員番号,苗字,名前,日付,勤怠区分,勤務パターン,開始時刻,終了時刻,休憩x3
 """
 import csv
 import io
 import logging
-import tempfile
 import os
-from pathlib import Path
+import tempfile
 from playwright.sync_api import sync_playwright, Page
 from models import StaffShift
-from shift_mapper import MF_MAP
 
 logger = logging.getLogger(__name__)
 
+# 勤怠区分マッピング (シフト記号 → 平日/休日)
+WORK_TYPE = {
+    '日': '平日',
+    '前': '平日',
+    '後': '平日',
+    'オン': '平日',
+    '休オ': '休日',
+    '公': '休日',
+    '希': '休日',
+    '有': '休日',
+    '欠': '休日',
+    '研': '平日',
+    '': None,  # 空白はスキップ
+}
 
-def generate_csv(staff_list: list[StaffShift]) -> str:
+
+def _get_pattern(code: str, mapping: dict) -> str:
+    """シフト記号とスタッフマッピングから勤務パターン名を返す"""
+    if code == '日':
+        return mapping.get('day_pattern', '日勤')
+    if code == 'オン':
+        return mapping.get('oncall_pattern', mapping.get('day_pattern', '日勤'))
+    if code == '前':
+        return mapping.get('morning_pattern', '午前')
+    if code == '後':
+        return mapping.get('afternoon_pattern', '午後')
+    if code == '研':
+        return mapping.get('day_pattern', '日勤')
+    if code == '有':
+        return '有給'
+    if code == '欠':
+        return '欠勤'
+    # 公/希/休オ → パターンなし
+    return ''
+
+
+def generate_csv(staff_list: list[StaffShift], staff_mapping: dict) -> str:
     """
     マネーフォワード勤怠「CSVで一括更新」用のCSVを生成する
 
-    NOTE: 実際のフォーマットを以下の手順で確認してください:
-      1. マネーフォワード → シフト管理 → 「エクスポート履歴」
-      2. サンプルCSVをダウンロード
-      3. 列名をこの関数のヘッダーに合わせて修正
+    列: 従業員番号,苗字,名前,日付,勤怠区分,勤務パターン,
+        開始時刻,終了時刻,休憩開始時刻1,休憩終了時刻1,
+        休憩開始時刻2,休憩終了時刻2,休憩開始時刻3,休憩終了時刻3
     """
     output = io.StringIO()
     writer = csv.writer(output)
 
-    # TODO: マネーフォワードの実際のCSVヘッダーに合わせて変更
-    writer.writerow(['氏名', '年月日', 'スケジュール', '開始時刻', '終了時刻', '勤務区分'])
+    writer.writerow([
+        '従業員番号', '苗字', '名前', '日付', '勤怠区分', '勤務パターン',
+        '開始時刻', '終了時刻',
+        '休憩開始時刻1', '休憩終了時刻1',
+        '休憩開始時刻2', '休憩終了時刻2',
+        '休憩開始時刻3', '休憩終了時刻3',
+    ])
 
+    skipped = []
     for staff in staff_list:
+        m = staff_mapping.get(staff.furigana)
+        if not m:
+            skipped.append(staff.name)
+            continue
+
         for day_idx, code in enumerate(staff.shifts):
-            if not code or code not in MF_MAP:
-                continue
-            mf = MF_MAP[code]
+            work_type = WORK_TYPE.get(code)
+            if work_type is None:
+                continue  # 空白はスキップ
+
             day = day_idx + 1
-            date_str = f'{staff.year}/{staff.month:02d}/{day:02d}'
+            date_str = f'{staff.year}/{staff.month}/{day}'  # YYYY/M/D
+            pattern = _get_pattern(code, m) if work_type == '平日' else ''
 
             writer.writerow([
-                staff.name,
+                m['employee_id'],
+                m['last_name'],
+                m['first_name'],
                 date_str,
-                mf.pattern or '',
-                mf.start or '',
-                mf.end or '',
-                mf.day_type,
+                work_type,
+                pattern,
+                '', '', '', '', '', '', '', '',
             ])
+
+    if skipped:
+        logger.warning(f'マッピング未登録のスタッフ: {", ".join(skipped)}')
 
     return output.getvalue()
 
 
 class MoneyForwardAutomator:
     def __init__(self, url: str, username: str, password: str):
-        self.url = url  # 例: https://attendance.moneyforward.com
+        self.url = url
         self.username = username
         self.password = password
         self._pw = None
@@ -81,56 +124,19 @@ class MoneyForwardAutomator:
             self._pw.stop()
 
     def _login(self):
-        login_url = f'{self.url}/session/new'
-        logger.info(f'マネーフォワード: {login_url} にアクセス')
-        self._page.goto(login_url)
+        logger.info(f'マネーフォワード: {self.url} にアクセス')
+        self._page.goto(f'{self.url}/session/new')
         # TODO: ログイン処理
-        # self._page.fill('input[name="email"]', self.username)
-        # self._page.click('input[type="submit"]')
-        # self._page.fill('input[name="password"]', self.password)
-        # self._page.click('input[type="submit"]')
-        # self._page.wait_for_url('**/attendance**')
         self._page.wait_for_load_state('networkidle')
-        logger.info('マネーフォワード: 読み込み完了')
 
     def upload_csv(self, csv_content: str, year: int, month: int):
-        """「CSVで一括更新」ボタンを押してCSVをアップロード"""
-        # CSVを一時ファイルに保存
+        """「CSVで一括更新」でCSVをアップロード"""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.csv',
                                          encoding='utf-8-sig', delete=False) as f:
             f.write(csv_content)
             tmp_path = f.name
-
         try:
-            shift_url = f'{self.url}/admin/shift_management/pattern_shift_schedules'
-            logger.info(f'マネーフォワード: {shift_url} へ移動')
-            self._page.goto(shift_url)
-            self._page.wait_for_load_state('networkidle')
-
-            # ==============================================================
-            # TODO: 以下のセレクタをマネーフォワードの実際のHTMLに合わせて実装
-            #
-            # ① 年月を設定 (必要な場合)
-            #    self._page.select_option('select[name="year"]', str(year))
-            #    self._page.select_option('select[name="month"]', str(month))
-            #    self._page.click('button:has-text("検索")')
-            #
-            # ② 「CSVで一括更新」ボタンをクリック
-            #    self._page.click('a:has-text("CSVで一括更新")')
-            #
-            # ③ ファイル選択ダイアログにCSVをセット
-            #    with self._page.expect_file_chooser() as fc_info:
-            #        self._page.click('input[type="file"]')
-            #    fc_info.value.set_files(tmp_path)
-            #
-            # ④ アップロード実行
-            #    self._page.click('button:has-text("更新する")')
-            #    self._page.wait_for_selector('.success-message')
-            # ==============================================================
-
-            raise NotImplementedError(
-                'マネーフォワードのCSVアップロードセレクタを実装してください '
-                '(python/moneyforward.py の upload_csv メソッド)'
-            )
+            # TODO: CSVアップロードのセレクタを実装
+            raise NotImplementedError('CSVアップロードは手動で実施してください')
         finally:
             os.unlink(tmp_path)

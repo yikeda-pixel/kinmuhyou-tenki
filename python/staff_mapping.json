@@ -1,0 +1,137 @@
+{
+  "イケダユウ": {
+    "employee_id": 1,
+    "last_name": "池田",
+    "first_name": "優",
+    "day_pattern": "日勤",
+    "oncall_pattern": "日勤",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "エサキアヤカ": {
+    "employee_id": 46,
+    "last_name": "江﨑",
+    "first_name": "彩加",
+    "day_pattern": "①日勤(08:30~17:30)",
+    "oncall_pattern": "①日勤(08:30~17:30)",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "アベジンタ": {
+    "employee_id": 45,
+    "last_name": "安部",
+    "first_name": "仁太",
+    "day_pattern": "日勤",
+    "oncall_pattern": "日勤",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "サイノサオリ": {
+    "employee_id": 65,
+    "last_name": "才野",
+    "first_name": "沙央里",
+    "day_pattern": "日勤",
+    "oncall_pattern": "日勤",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "オオツボサヤカ": {
+    "employee_id": 88,
+    "last_name": "大坪",
+    "first_name": "沙矢香",
+    "day_pattern": "時短(08:30~17:00)",
+    "oncall_pattern": "時短(08:30~17:00)",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "カワシマアンナ": {
+    "employee_id": 91,
+    "last_name": "川嶋",
+    "first_name": "晏菜",
+    "day_pattern": "①日勤(08:30~17:30)",
+    "oncall_pattern": "②日勤オ(8:30~17:30)",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "タカラベミキ": {
+    "employee_id": 99,
+    "last_name": "財部",
+    "first_name": "美希",
+    "day_pattern": "時短(08:30~17:00)",
+    "oncall_pattern": "時短(08:30~17:00)",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "カワシタレイナ": {
+    "employee_id": 100,
+    "last_name": "川下",
+    "first_name": "麗名",
+    "day_pattern": "①日勤(08:30~17:30)",
+    "oncall_pattern": "①日勤(08:30~17:30)",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "アカサカエミ": {
+    "employee_id": 87,
+    "last_name": "赤坂",
+    "first_name": "恵美",
+    "day_pattern": "時短(8:30～17:00)",
+    "oncall_pattern": "時短(8:30～17:00)",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "モリタユウキ": {
+    "employee_id": 89,
+    "last_name": "森田",
+    "first_name": "優貴",
+    "day_pattern": "日勤",
+    "oncall_pattern": "日勤",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "オオハタエリナ": {
+    "employee_id": 43,
+    "last_name": "大畑",
+    "first_name": "絵璃菜",
+    "day_pattern": "日勤",
+    "oncall_pattern": "日勤",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "ヨネムラリナ": {
+    "employee_id": 78,
+    "last_name": "米村",
+    "first_name": "里奈",
+    "day_pattern": "日勤（08:30~17:30)",
+    "oncall_pattern": "日勤（08:30~17:30)",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "ヒサトミマリコ": {
+    "employee_id": 86,
+    "last_name": "久冨",
+    "first_name": "真理子",
+    "day_pattern": "通常勤務（9:00～15:00）休憩なし",
+    "oncall_pattern": "通常勤務（9:00～15:00）休憩なし",
+    "morning_pattern": "通常勤務（9:00～15:00）休憩なし",
+    "afternoon_pattern": "通常勤務（9:00～15:00）休憩なし"
+  },
+  "タカナミミサキ": {
+    "employee_id": 93,
+    "last_name": "髙波",
+    "first_name": "美咲",
+    "day_pattern": "日勤（08:30~17:30)",
+    "oncall_pattern": "日勤（08:30~17:30)",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  },
+  "アマノトモコ": {
+    "employee_id": 95,
+    "last_name": "天野",
+    "first_name": "智子",
+    "day_pattern": "日勤",
+    "oncall_pattern": "日勤",
+    "morning_pattern": "午前",
+    "afternoon_pattern": "午後"
+  }
+}
